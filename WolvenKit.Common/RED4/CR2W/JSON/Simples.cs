@@ -2,6 +2,7 @@
 using System;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Collections.Generic;
 using WolvenKit.Common.Conversion;
 using WolvenKit.RED4.Archive.Buffer;
 using WolvenKit.RED4.Archive.CR2W;
@@ -396,6 +397,11 @@ public class DataBufferConverter : JsonConverter<DataBuffer>, ICustomRedConverte
             {
                 writer.WritePropertyName("Data");
                 JsonSerializer.Serialize(writer, pkg, options);
+            }
+            else if (value.Buffer.Data is IEnumerable<worldNodeData> worldNodeDataList)
+            {
+                writer.WritePropertyName("Data");
+                JsonSerializer.Serialize(writer, worldNodeDataList, options);
             }
             else
             {
