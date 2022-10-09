@@ -5,6 +5,7 @@ using WolvenKit.Common;
 using WolvenKit.Common.Extensions;
 using WolvenKit.Common.Model.Arguments;
 using WolvenKit.Common.Services;
+using WolvenKit.Modkit.RED4;
 using WolvenKit.RED4.Archive;
 
 namespace CP77Tools.Tasks
@@ -23,6 +24,7 @@ namespace CP77Tools.Tasks
         public  bool? serialize { get; init; }
         public MeshExportType? meshExportType { get; init; }
         public string meshExportMaterialRepo { get; init; }
+        public string reportPath {get; init;}
     }
 
     public partial class ConsoleFunctions
@@ -37,13 +39,17 @@ namespace CP77Tools.Tasks
                 return;
             }
 
+            Reporter reporter = new Reporter(options.reportPath);
+
             foreach (var file in path)
             {
-                UncookTaskInner(file, options);
+                UncookTaskInner(file, options, reporter);
             }
+
+            reporter.WriteReport();
         }
 
-        private void UncookTaskInner(string path, UncookTaskOptions options)
+        private void UncookTaskInner(string path, UncookTaskOptions options, Reporter reporter)
         {
             #region checks
 
@@ -189,12 +195,12 @@ namespace CP77Tools.Tasks
                 // run
                 if (options.hash != 0)
                 {
-                    _modTools.UncookSingle(ar, options.hash, outDir, exportArgs, rawOutDirInfo, options.forcebuffers, options.serialize ?? false);
+                    _modTools.UncookSingle(ar, options.hash, outDir, exportArgs, rawOutDirInfo, options.forcebuffers, options.serialize ?? false, reporter);
                     _loggerService.Success($" {ar.ArchiveAbsolutePath}: Uncooked one file: {options.hash}");
                 }
                 else
                 {
-                    _modTools.UncookAll(ar, outDir, exportArgs, options.unbundle, options.pattern, options.regex, rawOutDirInfo, options.forcebuffers, options.serialize ?? false);
+                    _modTools.UncookAll(ar, outDir, exportArgs, options.unbundle, options.pattern, options.regex, rawOutDirInfo, options.forcebuffers, options.serialize ?? false, reporter);
                 }
             }
 

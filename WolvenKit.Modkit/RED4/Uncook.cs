@@ -12,6 +12,7 @@ using WolvenKit.Common;
 using WolvenKit.Common.Conversion;
 using WolvenKit.Common.DDS;
 using WolvenKit.Common.Extensions;
+using WolvenKit.Common.Interfaces;
 using WolvenKit.Common.Model.Arguments;
 using WolvenKit.Common.Services;
 using WolvenKit.Modkit.Extensions;
@@ -43,7 +44,8 @@ namespace WolvenKit.Modkit.RED4
             GlobalExportArgs args,
             DirectoryInfo rawOutDir = null,
             ECookedFileFormat[] forcebuffers = null,
-            bool serialize = false)
+            bool serialize = false,
+            ITaskReporter reporter = null)
         {
             if (!archive.Files.TryGetValue(hash, out var gameFile))
             {
@@ -97,6 +99,7 @@ namespace WolvenKit.Modkit.RED4
                     }
                     catch (Exception e)
                     {
+                        reporter?.ReportError(relFileFullName, e.ToString());
                         _loggerService.Error($"{relFileFullName} And unexpected error occured while converting to json: {e.Message}");
                         _loggerService.Error(e);
                         return false;
@@ -123,10 +126,11 @@ namespace WolvenKit.Modkit.RED4
                 {
                     // wems need the physical infile path
                     args.Get<WemExportArgs>().FileName = mainFileInfo.FullName;
-                    return UncookBuffers(cr2WStream, relFileFullName, args, rawOutDir, forcebuffers);
+                    return UncookBuffers(cr2WStream, relFileFullName, args, rawOutDir, forcebuffers, reporter);
                 }
                 catch (Exception e)
                 {
+                    reporter?.ReportError(relFileFullName, e.ToString());
                     _loggerService.Error($"{relFileFullName} And unexpected error occured while uncooking: {e.Message}");
                     _loggerService.Error(e);
                     return false;
@@ -271,7 +275,8 @@ namespace WolvenKit.Modkit.RED4
             string regex = "",
             DirectoryInfo rawOutDir = null,
             ECookedFileFormat[] forcebuffers = null,
-            bool serialize = false)
+            bool serialize = false,
+            ITaskReporter reporter = null)
         {
             var extractedList = new ConcurrentBag<string>();
             var failedList = new ConcurrentBag<string>();
@@ -321,13 +326,14 @@ namespace WolvenKit.Modkit.RED4
             //foreach (var info in finalMatchesList)
             Parallel.ForEach(finalMatchesList, info =>
             {
-                if (UncookSingle(ar, info.NameHash64, outDir, args, rawOutDir, forcebuffers, serialize))
+                if (UncookSingle(ar, info.NameHash64, outDir, args, rawOutDir, forcebuffers, serialize, reporter))
                 {
                     extractedList.Add(info.FileName);
                 }
                 else
                 {
                     failedList.Add(info.FileName);
+                    reporter.ReportError(info.FileName, "");
                 }
 
                 Interlocked.Increment(ref progress);
@@ -353,7 +359,7 @@ namespace WolvenKit.Modkit.RED4
         /// <param name="rawOutDir">the output directory. the outfile is conbined from the rawoutdir and the relative path</param>
         /// <param name="forcebuffers"></param>
         /// <returns></returns>
-        private bool UncookBuffers(Stream cr2wStream, string relPath, GlobalExportArgs settings, DirectoryInfo rawOutDir, ECookedFileFormat[] forcebuffers = null)
+        private bool UncookBuffers(Stream cr2wStream, string relPath, GlobalExportArgs settings, DirectoryInfo rawOutDir, ECookedFileFormat[] forcebuffers = null, ITaskReporter reporter = null)
         {
             var outfile = new FileInfo(Path.Combine(rawOutDir.FullName, $"{relPath.Replace('\\', Path.DirectorySeparatorChar)}"));
             if (outfile.Directory == null)
@@ -431,6 +437,7 @@ namespace WolvenKit.Modkit.RED4
                     }
                     catch (Exception e)
                     {
+                        reporter?.ReportError(relPath, e.ToString());
                         _loggerService.Error($"{relPath} - {e.Message}");
                         _loggerService.Error(e);
 
@@ -451,6 +458,7 @@ namespace WolvenKit.Modkit.RED4
                     }
                     catch (Exception e)
                     {
+                        reporter?.ReportError(relPath, e.ToString());
                         _loggerService.Error($"{relPath} - {e.Message}");
                         _loggerService.Error(e);
 

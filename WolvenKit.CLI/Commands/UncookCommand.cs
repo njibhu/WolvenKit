@@ -34,15 +34,16 @@ namespace CP77Tools.Commands
             AddOption(new Option<bool>(new[] { "--serialize", "-s" }, "Serialize to JSON"));
             AddOption(new Option<MeshExportType?>(new[] { "--mesh-export-type" }, "Mesh export type (Default, WithMaterials, WithRig, Multimesh)."));
             AddOption(new Option<string>(new[] { "--mesh-export-material-repo" }, "Location of the material repo, if not specified, it uses the outpath."));
+            AddOption(new Option<string>(new[] { "--report" }, "Generate a result report at the given file path."));
 
 
             Handler = CommandHandler
-                .Create<string[], string, string, EUncookExtension?, bool?, ulong, string, string, bool, ECookedFileFormat[], bool?, MeshExportType?, string
+                .Create<string[], string, string, EUncookExtension?, bool?, ulong, string, string, bool, ECookedFileFormat[], bool?, MeshExportType?, string, string
                     , IHost>(Action);
         }
 
         private void Action(string[] path, string outpath, string raw, EUncookExtension? uext, bool? flip, ulong hash, string pattern,
-            string regex, bool unbundle, ECookedFileFormat[] forcebuffers, bool? serialize, MeshExportType? meshExportType, string meshExportMaterialRepo, IHost host)
+            string regex, bool unbundle, ECookedFileFormat[] forcebuffers, bool? serialize, MeshExportType? meshExportType, string meshExportMaterialRepo, string report, IHost host)
         {
             var serviceProvider = host.Services;
             var consoleFunctions = serviceProvider.GetRequiredService<ConsoleFunctions>();
@@ -59,7 +60,8 @@ namespace CP77Tools.Commands
                 forcebuffers = forcebuffers,
                 serialize = serialize,
                 meshExportType = meshExportType,
-                meshExportMaterialRepo = meshExportMaterialRepo
+                meshExportMaterialRepo = meshExportMaterialRepo,
+                reportPath = report
             });
         }
 
